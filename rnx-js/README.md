@@ -1,9 +1,10 @@
-# @rnx/sdk — RNX Testnet JS/TS SDK (skeleton)
+# @rnx/sdk — RNX Testnet JS/TS SDK
 
-> ⚠️ **TESTNET ONLY — NOT REAL MONEY — NOT MAINNET.** This is an SDK *skeleton*.
-> Every method has a real, stable signature with docstrings, but implementations
-> throw `NotImplementedError` so no fake on-chain data is ever returned.
-> Endpoints are placeholders until RNX Testnet infrastructure is provisioned.
+> ⚠️ **TESTNET ONLY — NOT REAL MONEY — NOT MAINNET.** Read methods query a real
+> EVM JSON-RPC endpoint directly. **Write access is limited to broadcasting a
+> PRE-SIGNED raw transaction** — this SDK never handles, stores, or requests
+> private keys. All returned values come straight from the RPC; nothing is
+> fabricated. Point `rpcUrl` at an RNX Testnet node to use it.
 
 ## Status / honesty
 
@@ -30,39 +31,53 @@ Minimal dependency surface: only [`ethers`](https://docs.ethers.org/) (v6).
 import { RnxClient, RNX_CHAIN_ID } from "@rnx/sdk";
 
 const client = new RnxClient({
-  rpcUrl: "<PLACEHOLDER_TESTNET_RPC_URL>",
+  rpcUrl: "<TESTNET_RPC_URL>",
   chainId: RNX_CHAIN_ID, // 194151
-  veridexEndpoint: "<PLACEHOLDER_VERIDEX_ENDPOINT>",
+  registryAddress: "0x...", // VERIDEX anchor registry (for veridexVerify)
 });
 
-// Each call throws NotImplementedError until wired to real infrastructure:
-// const provider = client.connect();
-// const bal = await client.getBalance("0x...");
-// const tx  = await client.sendTransaction(signer, { to, value });
-// const blk = await client.getBlock("latest");
-// const t   = await client.getTransaction("0x...");
-// const c   = client.contract(addr, abi, signer);
-// const v   = await client.veridexVerify("rakshanex.bihar");
+// Reads (query the RPC directly):
+const provider = client.connect();
+const bal = await client.getBalance("0x...");
+const blk = await client.getBlock("latest");
+const t   = await client.getTransaction("0x...");
+const out = await client.call({ to: "0x...", data: "0x..." });
+const c   = client.contract(addr, abi); // read-bound by default
+const v   = await client.veridexVerify("rakshanex.bihar"); // currentAnchor read
+
+// Write (PRE-SIGNED only — sign in YOUR wallet, SDK just broadcasts):
+// const resp = await client.sendRawTransaction(signedRawTx);
 ```
 
-## API surface (stubs)
+## API surface
 
 | Method | Purpose |
 |--------|---------|
-| `connect()` | Return an ethers `JsonRpcProvider` for RNX Testnet. |
-| `getBalance(address)` | Native RNX (test) balance in wei. |
-| `sendTransaction(signer, tx)` | Sign + broadcast a testnet transaction. |
-| `getBlock(blockHashOrTag)` | Fetch a block. |
+| `connect()` | Return a cached ethers `JsonRpcProvider` (static network). |
+| `getBalance(address, blockTag?)` | Native RNX (test) balance in wei. |
+| `getBlock(blockHashOrTag, prefetchTxs?)` | Fetch a block. |
 | `getTransaction(txHash)` | Fetch a transaction. |
-| `contract(address, abi, signerOrProvider?)` | Bind an ethers `Contract`. |
-| `veridexVerify(subject)` | Verify a name/proof via VERIDEX (fail-closed). |
+| `call(tx, blockTag?)` | Read-only `eth_call`. |
+| `contract(address, abi, runner?)` | Bind an ethers `Contract` (read by default). |
+| `veridexVerify(subject, registryAddress?)` | Read `currentAnchor` on the registry (fail-closed). |
+| `sendRawTransaction(signedRawTx)` | Broadcast a PRE-SIGNED raw tx. No key handling. |
+| `nameHash(subject)` | keccak256 nameHash helper (offline). |
 
 ## Source
 
-- `src/index.ts` — client + typed stubs.
+- `src/index.ts` — client + real implementations.
+- `example.js` — read-only usage example (placeholder RPC).
+- `package.json` / `tsconfig.json` — build config (dep: `ethers` v6).
+
+## Verification
+
+- `npx tsc --noEmit` — type-checks clean against ethers v6.
+- `node --check example.js` — parses clean.
+- `node example.js` — runs read-only; fails closed on an unreachable
+  placeholder RPC (never fabricates data).
 
 ## Safety
 
 - Never commit private keys. Testnet keys are developer-held only.
-- No real transactions, deploys, or production changes result from this
-  skeleton.
+- Writes are PRE-SIGNED raw txs only; the SDK never signs or holds keys.
+- No real transactions, deploys, or production changes result from this SDK.

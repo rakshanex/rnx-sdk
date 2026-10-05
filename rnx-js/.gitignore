@@ -1,0 +1,5 @@
+# Install / build artifacts — never commit
+node_modules/
+dist/
+*.log
+node_modules/

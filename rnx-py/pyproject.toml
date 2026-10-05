@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rnx-sdk"
+version = "0.1.0"
+description = "RNX Testnet Python SDK — read-only EVM JSON-RPC queries + pre-signed raw tx broadcast + VERIDEX currentAnchor verify. TESTNET ONLY, no private keys handled."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+keywords = ["rnx", "testnet", "evm", "web3", "veridex"]
+
+dependencies = [
+    "web3>=6.0.0",
+]
+
+[project.urls]
+"Source" = "https://example.invalid/rnx/sdk"
+
+[tool.setuptools]
+packages = ["rnx_sdk"]
